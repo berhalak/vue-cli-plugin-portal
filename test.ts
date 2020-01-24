@@ -1,4 +1,5 @@
 import { rewrite } from "./code";
+import minify from "html-minifier"
 
 const source = `
 <template>
@@ -42,7 +43,9 @@ const expected = `
 `
 
 function lin(text: string) {
-	return text.trim().replace(/\s\s*/g, " ").trim();
+	return minify.minify(text, {
+		collapseWhitespace: true
+	});
 }
 
 

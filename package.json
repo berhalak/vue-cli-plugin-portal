@@ -1,6 +1,6 @@
 {
   "name": "vue-cli-plugin-portal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Portal like feature for vue template",
   "main": "index.js",
   "dependencies": {
@@ -8,6 +8,8 @@
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.15",
+    "@types/html-minifier": "^3.5.3",
+    "html-minifier": "^4.0.0",
     "ts-node": "^8.6.2",
     "typescript": "^3.7.5"
   },
