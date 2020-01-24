@@ -58,7 +58,7 @@ function rewrite(source) {
             // if this is an inline alias (started with a, for example a-header)
             // add this as inline
             var refName = e.attribs["ref"];
-            if (refName) {
+            if (refName && e.tagName != "ref") {
                 var html = $(e).toString();
                 var encoded = source.includes("${");
                 templates[refName] = {
@@ -77,6 +77,7 @@ function rewrite(source) {
     function modifyAllTags() {
         // get the template node
         var template = $("template")[0];
+        var mutated = false;
         // traverse all tags
         traverse(template, function (ref) {
             // make sure it is valid
@@ -88,29 +89,39 @@ function rewrite(source) {
                 var name_1 = ref.attribs["name"];
                 if (templates[name_1]) {
                     templates[name_1].used = true;
+                    mutated = true;
                     if (templates[name_1].encoded) {
-                        var names = Object.keys(ref.attribs).filter(function (x) { return x != "name"; });
-                        var values = Object.entries(ref.attribs).filter(function (x) { return x[0] != "name"; }).map(function (x) { return x[1]; });
+                        var names = Object.keys(ref.attribs).filter(function (x) { return x != "name" && x != 'ref'; });
+                        var values = Object.entries(ref.attribs).filter(function (x) { return x[0] != "name" && x[0] != "ref"; }).map(function (x) { return x[1]; });
                         // add content
                         names.push("content");
                         var content = $(ref).html();
                         values.push(content);
                         var fun = assemble(templates[name_1].html, names);
                         var filled = fun.apply(void 0, values);
-                        $(ref).replaceWith(filled);
+                        var created = $(ref).replaceWith(filled);
+                        if (ref.attribs["ref"]) {
+                            created.attr("ref", ref.attribs["ref"]);
+                        }
                     }
                     else {
-                        $(ref).replaceWith(templates[name_1].html);
+                        var created = $(ref).replaceWith(templates[name_1].html);
+                        if (ref.attribs["ref"]) {
+                            created.attr("ref", ref.attribs["ref"]);
+                        }
                     }
                 }
             }
             return null;
         });
+        return mutated;
     }
     // first read all aliases
     findTemplates();
     // then go through every tag and modify this according to the definition
-    modifyAllTags();
+    if (!modifyAllTags()) {
+        return source;
+    }
     for (var _i = 0, _a = Object.values(templates); _i < _a.length; _i++) {
         var t = _a[_i];
         if (t.used) {

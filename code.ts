@@ -57,7 +57,7 @@ function rewrite(source: string): string {
 			// add this as inline
 
 			let refName = e.attribs["ref"];
-			if (refName) {
+			if (refName && e.tagName != "ref") {
 				const html = $(e).toString();
 				const encoded = source.includes("${");
 
@@ -82,6 +82,8 @@ function rewrite(source: string): string {
 		// get the template node
 		const template = $("template")[0];
 
+		let mutated = false;
+
 		// traverse all tags
 		traverse(template, ref => {
 			// make sure it is valid
@@ -94,25 +96,34 @@ function rewrite(source: string): string {
 				const name = ref.attribs["name"];
 				if (templates[name]) {
 					templates[name].used = true;
+					mutated = true;
 					if (templates[name].encoded) {
 
-						const names = Object.keys(ref.attribs).filter(x => x != "name");
-						const values = Object.entries(ref.attribs).filter(x => x[0] != "name").map(x => x[1]);
+						const names = Object.keys(ref.attribs).filter(x => x != "name" && x != 'ref');
+						const values = Object.entries(ref.attribs).filter(x => x[0] != "name" && x[0] != "ref").map(x => x[1]);
 						// add content
 						names.push("content");
 						const content = $(ref).html() as string;
 						values.push(content);
 						const fun = assemble(templates[name].html, names);
 						const filled = fun(...values);
-						$(ref).replaceWith(filled);
+						const created = $(ref).replaceWith(filled);
+						if (ref.attribs["ref"]) {
+							created.attr("ref", ref.attribs["ref"])
+						}
 					} else {
-						$(ref).replaceWith(templates[name].html);
+						const created = $(ref).replaceWith(templates[name].html);
+						if (ref.attribs["ref"]) {
+							created.attr("ref", ref.attribs["ref"])
+						}
 					}
 				}
 			}
 
 			return null;
 		});
+
+		return mutated;
 	}
 
 
@@ -120,7 +131,9 @@ function rewrite(source: string): string {
 	findTemplates();
 
 	// then go through every tag and modify this according to the definition
-	modifyAllTags();
+	if (!modifyAllTags()) {
+		return source;
+	}
 
 	for (let t of Object.values(templates)) {
 		if (t.used) {

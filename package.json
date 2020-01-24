@@ -1,6 +1,6 @@
 {
   "name": "vue-cli-plugin-portal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Portal like feature for vue template",
   "main": "index.js",
   "dependencies": {
