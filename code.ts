@@ -27,14 +27,20 @@ function rewrite(source: string): string {
 	}
 
 	// define aliases dictionary	
-	const refs: { [key: string]: CheerioElement } = {};
+	const templates: {
+		[key: string]: {
+			html: string,
+			element: CheerioElement,
+			encoded: boolean
+		}
+	} = {};
 
 	// load vue template, wrap it in body, for use in html method at the end (html renders inner content)
 	const $ = cheerio.load(`<body>${template}</body>`, { recognizeSelfClosing: true, xmlMode: true, decodeEntities: false });
 
 
 
-	function findRefs() {
+	function findTemplates() {
 		// get global template
 		const template = $("template")[0];
 		traverse(template, e => {
@@ -47,12 +53,23 @@ function rewrite(source: string): string {
 
 			let refName = e.attribs["ref"];
 			if (refName) {
-				refs[refName] = e;
+				const html = $(e).toString();
+				const encoded = source.includes("${");
+
+				templates[refName] = {
+					html,
+					element: e,
+					encoded,
+				}
+
 			}
 			return null;
 		});
 	}
 
+	function assemble(literal: string, params: string[]) {
+		return new Function(...params, "return `" + literal + "`;"); // TODO: Proper escaping
+	}
 
 	function modifyAllTags() {
 
@@ -60,17 +77,30 @@ function rewrite(source: string): string {
 		const template = $("template")[0];
 
 		// traverse all tags
-		traverse(template, element => {
+		traverse(template, ref => {
 			// make sure it is valid
-			if (!element || !element.tagName || element.type != "tag") {
+			if (!ref || !ref.tagName || ref.type != "tag") {
 				return null;
 			}
 
-			let isRef = element.tagName == "ref";
+			let isRef = ref.tagName == "ref";
 			if (isRef) {
-				const name = element.attribs["name"];
-				if (refs[name]) {
-					$(element).replaceWith(refs[name]);
+				const name = ref.attribs["name"];
+				if (templates[name]) {
+					if (templates[name].encoded) {
+
+						const names = Object.keys(ref.attribs).filter(x => x != "name");
+						const values = Object.entries(ref.attribs).filter(x => x[0] != "name").map(x => x[1]);
+						// add content
+						names.push("content");
+						const content = $(ref).html() as string;
+						values.push(content);
+						const fun = assemble(templates[name].html, names);
+						const filled = fun(...values);
+						$(ref).replaceWith(filled);
+					} else {
+						$(ref).replaceWith(templates[name].html);
+					}
 				}
 			}
 
@@ -80,10 +110,14 @@ function rewrite(source: string): string {
 
 
 	// first read all aliases
-	findRefs();
+	findTemplates();
 
 	// then go through every tag and modify this according to the definition
 	modifyAllTags();
+
+	for (let t of Object.values(templates).map(x => x.element)) {
+		$(t).remove();
+	}
 
 	// now serialize body content to html
 	let result = $("body").html() as string;
