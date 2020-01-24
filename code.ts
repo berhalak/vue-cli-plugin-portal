@@ -14,24 +14,29 @@ function traverse(element: CheerioElement, visitor: (e: CheerioElement) => Cheer
 }
 
 function rewrite(source: string): string {
+	// at least one named ref
+	if (!source.includes("<ref")) {
+		return source;
+	}
 
-
-	const isUpper = source.startsWith("<template alias upper") || source.startsWith(`<template alias="" upper=""`);
-
-	let template: any = source.match(/<template>.*<\/template>/s);
-
-	if (template && template.length) {
-		template = template[0] as string;
+	let templateMatch = source.match(/<template>.*<\/template>/s);
+	let template = '';
+	if (templateMatch && templateMatch.length) {
+		template = templateMatch[0] as string;
 	} else {
 		return source;
 	}
+
+
+
 
 	// define aliases dictionary	
 	const templates: {
 		[key: string]: {
 			html: string,
 			element: CheerioElement,
-			encoded: boolean
+			encoded: boolean,
+			used: boolean
 		}
 	} = {};
 
@@ -60,6 +65,7 @@ function rewrite(source: string): string {
 					html,
 					element: e,
 					encoded,
+					used: false,
 				}
 
 			}
@@ -87,6 +93,7 @@ function rewrite(source: string): string {
 			if (isRef) {
 				const name = ref.attribs["name"];
 				if (templates[name]) {
+					templates[name].used = true;
 					if (templates[name].encoded) {
 
 						const names = Object.keys(ref.attribs).filter(x => x != "name");
@@ -115,8 +122,10 @@ function rewrite(source: string): string {
 	// then go through every tag and modify this according to the definition
 	modifyAllTags();
 
-	for (let t of Object.values(templates).map(x => x.element)) {
-		$(t).remove();
+	for (let t of Object.values(templates)) {
+		if (t.used) {
+			$(t.element).remove();
+		}
 	}
 
 	// now serialize body content to html

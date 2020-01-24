@@ -31,10 +31,14 @@ function traverse(element, visitor) {
     return null;
 }
 function rewrite(source) {
-    var isUpper = source.startsWith("<template alias upper") || source.startsWith("<template alias=\"\" upper=\"\"");
-    var template = source.match(/<template>.*<\/template>/s);
-    if (template && template.length) {
-        template = template[0];
+    // at least one named ref
+    if (!source.includes("<ref")) {
+        return source;
+    }
+    var templateMatch = source.match(/<template>.*<\/template>/s);
+    var template = '';
+    if (templateMatch && templateMatch.length) {
+        template = templateMatch[0];
     }
     else {
         return source;
@@ -61,6 +65,7 @@ function rewrite(source) {
                     html: html,
                     element: e,
                     encoded: encoded,
+                    used: false,
                 };
             }
             return null;
@@ -82,6 +87,7 @@ function rewrite(source) {
             if (isRef) {
                 var name_1 = ref.attribs["name"];
                 if (templates[name_1]) {
+                    templates[name_1].used = true;
                     if (templates[name_1].encoded) {
                         var names = Object.keys(ref.attribs).filter(function (x) { return x != "name"; });
                         var values = Object.entries(ref.attribs).filter(function (x) { return x[0] != "name"; }).map(function (x) { return x[1]; });
@@ -105,9 +111,11 @@ function rewrite(source) {
     findTemplates();
     // then go through every tag and modify this according to the definition
     modifyAllTags();
-    for (var _i = 0, _a = Object.values(templates).map(function (x) { return x.element; }); _i < _a.length; _i++) {
+    for (var _i = 0, _a = Object.values(templates); _i < _a.length; _i++) {
         var t = _a[_i];
-        $(t).remove();
+        if (t.used) {
+            $(t.element).remove();
+        }
     }
     // now serialize body content to html
     var result = $("body").html();

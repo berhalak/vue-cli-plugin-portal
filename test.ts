@@ -14,6 +14,7 @@ const source = `
 		<card ref="b"><h1>\${title}</h1></card>
 		<card ref="a"><h1>\${content}</h1></card>
 		<card ref="c"><h1>C title</h1></card>
+		<card ref="d">test</card>
 	</div>
 </template>
 <script>
@@ -35,7 +36,8 @@ const expected = `
 					<card ref="c">
 						<h1>C title</h1>
 					</card>
-			</span>
+            </span>
+            <card ref="d">test</card>
         </div>
 </template>
 <script>
@@ -43,16 +45,16 @@ const expected = `
 `
 
 function lin(text: string) {
-	return minify.minify(text, {
-		collapseWhitespace: true
-	});
+    return minify.minify(text, {
+        collapseWhitespace: true
+    });
 }
 
 
 if (lin(expected) != lin(rewrite(source))) {
-	console.log(lin(expected));
-	console.log(lin(rewrite(source)));
-	throw new Error("Test failed")
+    console.log(lin(expected));
+    console.log(lin(rewrite(source)));
+    throw new Error("Test failed")
 } else {
-	console.log("Test passed")
+    console.log("Test passed")
 }
