@@ -14,8 +14,8 @@ function traverse(element: CheerioElement, visitor: (e: CheerioElement) => Cheer
 }
 
 function rewrite(source: string): string {
-	// at least one named ref
-	if (!source.includes("<ref")) {
+	// at least one named portal
+	if (!source.includes("<portal")) {
 		return source;
 	}
 
@@ -56,8 +56,8 @@ function rewrite(source: string): string {
 			// if this is an inline alias (started with a, for example a-header)
 			// add this as inline
 
-			let refName = e.attribs["ref"];
-			if (refName && e.tagName != "ref") {
+			let refName = e.attribs["portal"];
+			if (refName && e.tagName != "portal") {
 				const html = $(e).toString();
 				const encoded = source.includes("${");
 
@@ -85,36 +85,36 @@ function rewrite(source: string): string {
 		let mutated = false;
 
 		// traverse all tags
-		traverse(template, ref => {
+		traverse(template, portal => {
 			// make sure it is valid
-			if (!ref || !ref.tagName || ref.type != "tag") {
+			if (!portal || !portal.tagName || portal.type != "tag") {
 				return null;
 			}
 
-			let isRef = ref.tagName == "ref";
+			let isRef = portal.tagName == "portal";
 			if (isRef) {
-				const name = ref.attribs["name"];
+				const name = portal.attribs["name"];
 				if (templates[name]) {
 					templates[name].used = true;
 					mutated = true;
 					if (templates[name].encoded) {
 
-						const names = Object.keys(ref.attribs).filter(x => x != "name" && x != 'ref');
-						const values = Object.entries(ref.attribs).filter(x => x[0] != "name" && x[0] != "ref").map(x => x[1]);
+						const names = Object.keys(portal.attribs).filter(x => x != "name" && x != 'portal');
+						const values = Object.entries(portal.attribs).filter(x => x[0] != "name" && x[0] != "portal").map(x => x[1]);
 						// add content
 						names.push("content");
-						const content = $(ref).html() as string;
+						const content = $(portal).html() as string;
 						values.push(content);
 						const fun = assemble(templates[name].html, names);
 						const filled = fun(...values);
-						const created = $(ref).replaceWith(filled);
-						if (ref.attribs["ref"]) {
-							created.attr("ref", ref.attribs["ref"])
+						const created = $(portal).replaceWith(filled);
+						if (portal.attribs["portal"]) {
+							created.attr("portal", portal.attribs["portal"])
 						}
 					} else {
-						const created = $(ref).replaceWith(templates[name].html);
-						if (ref.attribs["ref"]) {
-							created.attr("ref", ref.attribs["ref"])
+						const created = $(portal).replaceWith(templates[name].html);
+						if (portal.attribs["portal"]) {
+							created.attr("portal", portal.attribs["portal"])
 						}
 					}
 				}

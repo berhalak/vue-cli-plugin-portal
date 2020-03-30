@@ -5,16 +5,16 @@ const source = `
 <template>
 	<div>
 		<span>
-			<ref name="a">
+			<portal name="a">
 				<content />
-			</ref>
-			<ref name="b" title="B title" />		
-			<ref name="c"  />		
+			</portal>
+			<portal name="b" title="B title" />		
+			<portal name="c"  />		
 		</span>
-		<card ref="b"><h1>\${title}</h1></card>
-		<card ref="a"><h1>\${content}</h1></card>
-		<card ref="c"><h1>C title</h1></card>
-		<card ref="d">test</card>
+		<card portal="b"><h1>\${title}</h1></card>
+		<card portal="a"><h1>\${content}</h1></card>
+		<card portal="c"><h1>C title</h1></card>
+		<card portal="d">test</card>
 	</div>
 </template>
 <script>
@@ -25,19 +25,19 @@ const expected = `
 <template>
         <div>
 			<span>
-					<card ref="a">
+					<card portal="a">
 						<h1>
 							<content/>
 						</h1>
 					</card>
-					<card ref="b">
+					<card portal="b">
 						<h1>B title</h1>
 					</card>
-					<card ref="c">
+					<card portal="c">
 						<h1>C title</h1>
 					</card>
             </span>
-            <card ref="d">test</card>
+            <card portal="d">test</card>
         </div>
 </template>
 <script>
@@ -45,16 +45,16 @@ const expected = `
 `
 
 function lin(text: string) {
-    return minify.minify(text, {
-        collapseWhitespace: true
-    });
+	return minify.minify(text, {
+		collapseWhitespace: true
+	});
 }
 
 
 if (lin(expected) != lin(rewrite(source))) {
-    console.log(lin(expected));
-    console.log(lin(rewrite(source)));
-    throw new Error("Test failed")
+	console.log(lin(expected));
+	console.log(lin(rewrite(source)));
+	throw new Error("Test failed")
 } else {
-    console.log("Test passed")
+	console.log("Test passed")
 }

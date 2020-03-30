@@ -31,8 +31,8 @@ function traverse(element, visitor) {
     return null;
 }
 function rewrite(source) {
-    // at least one named ref
-    if (!source.includes("<ref")) {
+    // at least one named portal
+    if (!source.includes("<portal")) {
         return source;
     }
     var templateMatch = source.match(/<template>.*<\/template>/s);
@@ -57,8 +57,8 @@ function rewrite(source) {
             }
             // if this is an inline alias (started with a, for example a-header)
             // add this as inline
-            var refName = e.attribs["ref"];
-            if (refName && e.tagName != "ref") {
+            var refName = e.attribs["portal"];
+            if (refName && e.tagName != "portal") {
                 var html = $(e).toString();
                 var encoded = source.includes("${");
                 templates[refName] = {
@@ -79,35 +79,35 @@ function rewrite(source) {
         var template = $("template")[0];
         var mutated = false;
         // traverse all tags
-        traverse(template, function (ref) {
+        traverse(template, function (portal) {
             // make sure it is valid
-            if (!ref || !ref.tagName || ref.type != "tag") {
+            if (!portal || !portal.tagName || portal.type != "tag") {
                 return null;
             }
-            var isRef = ref.tagName == "ref";
+            var isRef = portal.tagName == "portal";
             if (isRef) {
-                var name_1 = ref.attribs["name"];
+                var name_1 = portal.attribs["name"];
                 if (templates[name_1]) {
                     templates[name_1].used = true;
                     mutated = true;
                     if (templates[name_1].encoded) {
-                        var names = Object.keys(ref.attribs).filter(function (x) { return x != "name" && x != 'ref'; });
-                        var values = Object.entries(ref.attribs).filter(function (x) { return x[0] != "name" && x[0] != "ref"; }).map(function (x) { return x[1]; });
+                        var names = Object.keys(portal.attribs).filter(function (x) { return x != "name" && x != 'portal'; });
+                        var values = Object.entries(portal.attribs).filter(function (x) { return x[0] != "name" && x[0] != "portal"; }).map(function (x) { return x[1]; });
                         // add content
                         names.push("content");
-                        var content = $(ref).html();
+                        var content = $(portal).html();
                         values.push(content);
                         var fun = assemble(templates[name_1].html, names);
                         var filled = fun.apply(void 0, values);
-                        var created = $(ref).replaceWith(filled);
-                        if (ref.attribs["ref"]) {
-                            created.attr("ref", ref.attribs["ref"]);
+                        var created = $(portal).replaceWith(filled);
+                        if (portal.attribs["portal"]) {
+                            created.attr("portal", portal.attribs["portal"]);
                         }
                     }
                     else {
-                        var created = $(ref).replaceWith(templates[name_1].html);
-                        if (ref.attribs["ref"]) {
-                            created.attr("ref", ref.attribs["ref"]);
+                        var created = $(portal).replaceWith(templates[name_1].html);
+                        if (portal.attribs["portal"]) {
+                            created.attr("portal", portal.attribs["portal"]);
                         }
                     }
                 }
