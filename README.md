@@ -14,19 +14,19 @@ Transforms vue template from alias form (you can use interpolation of args and c
 <template>
     <div>
         <div>
-            <ref name="a">
+            <portal name="a">
                 <content />
-            </ref>
-            <ref name="b" title="B title" />
-            <ref name="c" />
+            </portal>
+            <portal name="b" title="B title" />
+            <portal name="c" />
         </div>
-        <card ref="b">
+        <card portal="b">
             <h1>${title}</h1>
         </card>
-        <card ref="a">
+        <card portal="a">
             <h1>${content}</h1>
         </card>
-        <card ref="c">
+        <card portal="c">
             <h1>C title</h1>
         </card>
     </div>
@@ -41,15 +41,15 @@ To:
 <template>
     <div>
         <div>
-            <card ref="a">
+            <card portal="a">
                 <h1>
                     <content />
                 </h1>
             </card>
-            <card ref="b">
+            <card portal="b">
                 <h1>B title</h1>
             </card>
-            <card ref="c">
+            <card portal="c">
                 <h1>C title</h1>
             </card>
         </div>
